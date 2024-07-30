@@ -9,6 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"io"
+	"log"
 	"net/http"
 	"terraform-provider-trust-store/tools"
 )
@@ -28,16 +30,29 @@ type trustStoreResource struct {
 }
 
 type trustStoreModel struct {
-	/*	ID           types.String `tfsdk:"id"`
-		SerialNumber types.String `tfsdk:"serial_number"`
-	*/Certificate types.String `tfsdk:"certificate"`
-	/*	Status       types.String `tfsdk:"status"`
-		Issuer       types.String `tfsdk:"issuer"`
-		Signature    types.String `tfsdk:"signature"`
-		UploadedOn   types.String `tfsdk:"uploaded_on"`
-		UploadedAt   types.String `tfsdk:"uploaded_at"`
-		ExpiresOn    types.String `tfsdk:"expires_on"`
-	*/
+	ID           types.String `tfsdk:"id"`
+	SerialNumber types.String `tfsdk:"serial_number"`
+	Certificate  types.String `tfsdk:"certificate"`
+	Status       types.String `tfsdk:"status"`
+	Issuer       types.String `tfsdk:"issuer"`
+	Signature    types.String `tfsdk:"signature"`
+	UploadedOn   types.String `tfsdk:"uploaded_on"`
+	UploadedAt   types.String `tfsdk:"uploaded_at"`
+	ExpiresOn    types.String `tfsdk:"expires_on"`
+}
+
+type trustStoreJsonModel struct {
+	Result struct {
+		ID           string `json:"id"`
+		SerialNumber string `json:"serial_number"`
+		Certificate  string `json:"certificate"`
+		Status       string `json:"status"`
+		Issuer       string `json:"issuer"`
+		Signature    string `json:"signature"`
+		UploadedOn   string `json:"uploaded_on"`
+		UploadedAt   string `json:"uploaded_at"`
+		ExpiresOn    string `json:"expires_on"`
+	}
 }
 
 // Configure adds the provider configured client to the resource.
@@ -69,40 +84,41 @@ func (r *trustStoreResource) Metadata(_ context.Context, req resource.MetadataRe
 func (r *trustStoreResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
-			/*			"id": schema.StringAttribute{
-							Computed: true,
-						},
-						"serial_number": schema.StringAttribute{
-							Computed: true,
-						},
-			*/"certificate": schema.StringAttribute{
+			"id": schema.StringAttribute{
+				Computed: true,
+			},
+			"serial_number": schema.StringAttribute{
+				Computed: true,
+			},
+			"certificate": schema.StringAttribute{
 				Required: true,
 			},
-			/*			"status": schema.StringAttribute{
-							Computed: true,
-						},
-						"issuer": schema.StringAttribute{
-							Computed: true,
-						},
-						"signature": schema.StringAttribute{
-							Computed: true,
-						},
-						"uploaded_on": schema.StringAttribute{
-							Computed: true,
-						},
-						"uploaded_at": schema.StringAttribute{
-							Computed: true,
-						},
-						"expires_on": schema.StringAttribute{
-							Computed: true,
-						},
-			*/},
+			"status": schema.StringAttribute{
+				Computed: true,
+			},
+			"issuer": schema.StringAttribute{
+				Computed: true,
+			},
+			"signature": schema.StringAttribute{
+				Computed: true,
+			},
+			"uploaded_on": schema.StringAttribute{
+				Computed: true,
+			},
+			"uploaded_at": schema.StringAttribute{
+				Computed: true,
+			},
+			"expires_on": schema.StringAttribute{
+				Computed: true,
+			},
+		},
 	}
 }
 
 // Create a new resource.
 func (r *trustStoreResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan trustStoreModel
+	var jsonModel trustStoreJsonModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -122,6 +138,24 @@ func (r *trustStoreResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	defer response.Body.Close()
+
+	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	bodyString := string(bodyBytes)
+	println(bodyString)
+
+	_ = json.Unmarshal(bodyBytes, &jsonModel)
+
+	plan.ID = types.StringValue(jsonModel.Result.ID)
+	plan.SerialNumber = types.StringValue(jsonModel.Result.SerialNumber)
+	plan.Status = types.StringValue(jsonModel.Result.Status)
+	plan.Issuer = types.StringValue(jsonModel.Result.Issuer)
+	plan.Signature = types.StringValue(jsonModel.Result.Signature)
+	plan.UploadedOn = types.StringValue(jsonModel.Result.UploadedOn)
+	plan.UploadedAt = types.StringValue(jsonModel.Result.UploadedAt)
+	plan.ExpiresOn = types.StringValue(jsonModel.Result.ExpiresOn)
 
 	// Set state to fully populated data
 	diags = resp.State.Set(ctx, plan)
