@@ -1,0 +1,161 @@
+package provider
+
+import (
+	"bytes"
+	"context"
+	"encoding/gob"
+	"encoding/json"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"net/http"
+	"terraform-provider-trust-store/tools"
+)
+
+// Ensure the implementation satisfies the expected interfaces.
+var (
+	_ resource.Resource              = &trustStoreResource{}
+	_ resource.ResourceWithConfigure = &trustStoreResource{}
+)
+
+func NewTrustStoreResource() resource.Resource {
+	return &trustStoreResource{}
+}
+
+type trustStoreResource struct {
+	client *tools.TrustStoreClient
+}
+
+type trustStoreModel struct {
+	ID           types.String `tfsdk:"id"`
+	SerialNumber types.String `tfsdk:"serial_number"`
+	Certificate  types.String `tfsdk:"certificate"`
+	Status       types.String `tfsdk:"status"`
+	Issuer       types.String `tfsdk:"issuer"`
+	Signature    types.String `tfsdk:"signature"`
+	UploadedOn   types.String `tfsdk:"uploaded_on"`
+	UploadedAt   types.String `tfsdk:"updated_at"`
+	ExpiresOn    types.String `tfsdk:"expires_on"`
+}
+
+// Configure adds the provider configured client to the resource.
+func (r *trustStoreResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(*tools.TrustStoreClient)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *hashicups.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+
+	r.client = client
+}
+
+// Metadata returns the resource type name.
+func (r *trustStoreResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_password"
+}
+
+// Schema defines the schema for the resource.
+func (r *trustStoreResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed: true,
+			},
+			"serial_number": schema.StringAttribute{
+				Computed: true,
+			},
+			"certificate": schema.StringAttribute{
+				Required: true,
+			},
+			"status": schema.StringAttribute{
+				Computed: true,
+			},
+			"issuer": schema.StringAttribute{
+				Computed: true,
+			},
+			"signature": schema.StringAttribute{
+				Computed: true,
+			},
+			"uploaded_on": schema.StringAttribute{
+				Computed: true,
+			},
+			"uploaded_at": schema.StringAttribute{
+				Computed: true,
+			},
+			"expires_on": schema.StringAttribute{
+				Computed: true,
+			},
+		},
+	}
+}
+
+// Create a new resource.
+func (r *trustStoreResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan trustStoreModel
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	values := map[string]string{"certificate": plan.Certificate.ValueString()}
+	jsonData, _ := json.Marshal(values)
+
+	response, err := http.Post(r.client.Url, "application/json", bytes.NewBuffer(jsonData))
+
+	if err != nil {
+		resp.Diagnostics.AddError("Cannot send post request", err.Error())
+	}
+
+	defer response.Body.Close()
+
+	var res map[string]interface{}
+	json.NewDecoder(response.Body).Decode(&res)
+
+	json.Unmarshal(GetBytes(res["result"]), &plan)
+
+	// Set state to fully populated data
+	diags = resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+}
+
+// Read refreshes the Terraform state with the latest data.
+func (r *trustStoreResource) Read(_ context.Context, _ resource.ReadRequest, _ *resource.ReadResponse) {
+}
+
+// Update updates the resource and sets the updated Terraform state on success.
+func (r *trustStoreResource) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
+}
+
+// Delete deletes the resource and removes the Terraform state on success.
+func (r *trustStoreResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state trustStoreModel
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+}
+
+func GetBytes(key interface{}) []byte {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(key)
+	if err != nil {
+		return nil
+	}
+	return buf.Bytes()
+}
