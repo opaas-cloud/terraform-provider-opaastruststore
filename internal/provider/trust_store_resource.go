@@ -118,7 +118,7 @@ func (r *trustStoreResource) Schema(_ context.Context, _ resource.SchemaRequest,
 // Create a new resource.
 func (r *trustStoreResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan trustStoreModel
-	var jsonModel trustStoreJsonModel
+	jsonModel := &trustStoreJsonModel{}
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -144,7 +144,12 @@ func (r *trustStoreResource) Create(ctx context.Context, req resource.CreateRequ
 		log.Fatal(err)
 	}
 	bodyString := string(bodyBytes)
-	println(bodyString)
+	if response.StatusCode != 201 {
+		resp.Diagnostics.AddError("Not created", bodyString)
+	}
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	_ = json.Unmarshal(bodyBytes, &jsonModel)
 
