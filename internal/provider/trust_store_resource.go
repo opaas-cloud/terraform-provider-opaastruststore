@@ -129,7 +129,7 @@ func (r *trustStoreResource) Create(ctx context.Context, req resource.CreateRequ
 	jsonData, _ := json.Marshal(values)
 
 	request, err := http.NewRequest("POST", r.client.Url, bytes.NewBuffer(jsonData))
-	request.Header.Add("Authorization", r.client.Token)
+	request.Header.Add("Authorization", "Bearer "+r.client.Token)
 	client := &http.Client{}
 	response, err := client.Do(request)
 
