@@ -39,7 +39,7 @@ type trusStoreProviderModel struct {
 
 // Metadata returns the provider type name.
 func (p *trustStoreProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "opaas_trust_store"
+	resp.TypeName = "opaastruststore"
 	resp.Version = p.version
 }
 
