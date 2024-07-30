@@ -28,15 +28,16 @@ type trustStoreResource struct {
 }
 
 type trustStoreModel struct {
-	ID           types.String `tfsdk:"id"`
-	SerialNumber types.String `tfsdk:"serial_number"`
-	Certificate  types.String `tfsdk:"certificate"`
-	Status       types.String `tfsdk:"status"`
-	Issuer       types.String `tfsdk:"issuer"`
-	Signature    types.String `tfsdk:"signature"`
-	UploadedOn   types.String `tfsdk:"uploaded_on"`
-	UploadedAt   types.String `tfsdk:"uploaded_at"`
-	ExpiresOn    types.String `tfsdk:"expires_on"`
+	/*	ID           types.String `tfsdk:"id"`
+		SerialNumber types.String `tfsdk:"serial_number"`
+	*/Certificate types.String `tfsdk:"certificate"`
+	/*	Status       types.String `tfsdk:"status"`
+		Issuer       types.String `tfsdk:"issuer"`
+		Signature    types.String `tfsdk:"signature"`
+		UploadedOn   types.String `tfsdk:"uploaded_on"`
+		UploadedAt   types.String `tfsdk:"uploaded_at"`
+		ExpiresOn    types.String `tfsdk:"expires_on"`
+	*/
 }
 
 // Configure adds the provider configured client to the resource.
@@ -68,34 +69,34 @@ func (r *trustStoreResource) Metadata(_ context.Context, req resource.MetadataRe
 func (r *trustStoreResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Computed: true,
-			},
-			"serial_number": schema.StringAttribute{
-				Computed: true,
-			},
-			"certificate": schema.StringAttribute{
+			/*			"id": schema.StringAttribute{
+							Computed: true,
+						},
+						"serial_number": schema.StringAttribute{
+							Computed: true,
+						},
+			*/"certificate": schema.StringAttribute{
 				Required: true,
 			},
-			"status": schema.StringAttribute{
-				Computed: true,
-			},
-			"issuer": schema.StringAttribute{
-				Computed: true,
-			},
-			"signature": schema.StringAttribute{
-				Computed: true,
-			},
-			"uploaded_on": schema.StringAttribute{
-				Computed: true,
-			},
-			"uploaded_at": schema.StringAttribute{
-				Computed: true,
-			},
-			"expires_on": schema.StringAttribute{
-				Computed: true,
-			},
-		},
+			/*			"status": schema.StringAttribute{
+							Computed: true,
+						},
+						"issuer": schema.StringAttribute{
+							Computed: true,
+						},
+						"signature": schema.StringAttribute{
+							Computed: true,
+						},
+						"uploaded_on": schema.StringAttribute{
+							Computed: true,
+						},
+						"uploaded_at": schema.StringAttribute{
+							Computed: true,
+						},
+						"expires_on": schema.StringAttribute{
+							Computed: true,
+						},
+			*/},
 	}
 }
 
