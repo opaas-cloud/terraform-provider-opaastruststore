@@ -112,7 +112,10 @@ func (r *trustStoreResource) Create(ctx context.Context, req resource.CreateRequ
 	values := map[string]string{"certificate": plan.Certificate.ValueString()}
 	jsonData, _ := json.Marshal(values)
 
-	response, err := http.Post(r.client.Url, "application/json", bytes.NewBuffer(jsonData))
+	request, err := http.NewRequest("POST", r.client.Url, bytes.NewBuffer(jsonData))
+	request.Header.Add("Authorization", r.client.Token)
+	client := &http.Client{}
+	response, err := client.Do(request)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Cannot send post request", err.Error())
