@@ -35,7 +35,7 @@ type trustStoreModel struct {
 	Issuer       types.String `tfsdk:"issuer"`
 	Signature    types.String `tfsdk:"signature"`
 	UploadedOn   types.String `tfsdk:"uploaded_on"`
-	UploadedAt   types.String `tfsdk:"updated_at"`
+	UploadedAt   types.String `tfsdk:"uploaded_at"`
 	ExpiresOn    types.String `tfsdk:"expires_on"`
 }
 
