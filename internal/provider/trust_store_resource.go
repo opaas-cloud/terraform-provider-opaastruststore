@@ -120,11 +120,6 @@ func (r *trustStoreResource) Create(ctx context.Context, req resource.CreateRequ
 
 	defer response.Body.Close()
 
-	var res map[string]interface{}
-	json.NewDecoder(response.Body).Decode(&res)
-
-	json.Unmarshal(GetBytes(res["result"]), &plan)
-
 	// Set state to fully populated data
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
