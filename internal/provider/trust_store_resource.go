@@ -3,7 +3,6 @@ package provider
 import (
 	"bytes"
 	"context"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -183,17 +182,28 @@ func (r *trustStoreResource) Delete(ctx context.Context, req resource.DeleteRequ
 	var state trustStoreModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
+
+	request, err := http.NewRequest("DELETE", r.client.Url+"/"+state.ID.ValueString(), nil)
+	request.Header.Add("Authorization", "Bearer "+r.client.Token)
+	client := &http.Client{}
+	response, err := client.Do(request)
+
+	if err != nil {
+		resp.Diagnostics.AddError("Cannot send delete request", err.Error())
+	}
+
+	defer response.Body.Close()
+
+	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	bodyString := string(bodyBytes)
+	if response.StatusCode != 200 {
+		resp.Diagnostics.AddError("Not deleted", bodyString)
+	}
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
-}
-
-func GetBytes(key interface{}) []byte {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(key)
-	if err != nil {
-		return nil
-	}
-	return buf.Bytes()
 }
